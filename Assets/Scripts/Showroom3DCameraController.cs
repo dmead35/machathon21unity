@@ -1,109 +1,154 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class Showroom3DCameraController : MonoBehaviour
 {
     public Showroom3DInputController inputController;
-    protected const float rotationScaleInBarrelRollRotationDegreesPerInputValue = 40.0f;
-    protected const float rotationScaleInYawRotationDegreesPerInputValue = 40.0f;
-    protected const float rotationScaleInPitchRotationDegreesPerInputValue = 40.0f;
-
+    public Canvas uiCanvas;
     Vector2 rotation = Vector2.zero;
     public float speed = 3;
 
-    protected enum CameraMovementModes
+    protected Transform panel;
+    protected Transform textBench1;
+    protected Transform textBag1;
+    protected Transform textBench2;
+    protected Transform textBag2;
+    protected Transform textTreadmill;
+    protected Transform log;
+
+    void Start()
     {
-        DoNothing = 0,
-        Pitch = 1,
-        Yaw = 2,
-        BarrelRoll = 3
+        panel = uiCanvas.transform.Find("StoreProductInfoPanel");
+        textBench1 = panel.transform.Find("Bench1Info");
+        textBag1 = panel.transform.Find("PunchingBag1Info");
+        textBench2 = panel.transform.Find("Bench2Info");
+        textTreadmill = panel.transform.Find("TreadmillInfo");
+        textBag2 = panel.transform.Find("PunchingBag2Info");
+        log = panel.transform.Find("Log");
+        panel.gameObject.SetActive(false);
     }
 
     void Update()
     {
+        // mouselook
+        // found technique via a google search
         rotation.y += Input.GetAxis("Mouse X");
         rotation.x += -Input.GetAxis("Mouse Y");
         transform.eulerAngles = (Vector2)rotation * speed;
-        // UpdateCameraDirection();
-    }
 
-    protected void UpdateCameraDirection()
-    {
-        var cameraMovementModeSelection = DetermineWhichCameraMovementModeToHonor();
+        var cameraDirection = new Ray(this.transform.position, this.transform.forward);
 
-        switch (cameraMovementModeSelection)
+        bool hitTreadmill = false;
+        bool hitBench1 = false;
+        bool hitBench2 = false;
+        bool hitBag1 = false;
+        bool hitBag2 = false;
+
+        if (Physics.Raycast(cameraDirection, out RaycastHit hitInfo))
         {
-            case CameraMovementModes.BarrelRoll:
-                var currentMouseX = inputController.CurrentMouseX;
-                var degreesToRotateZ = currentMouseX * rotationScaleInBarrelRollRotationDegreesPerInputValue;
-                BarrelRollCamera(degreesToRotateZ);
-                break;
-            case CameraMovementModes.Yaw:
-                currentMouseX = inputController.CurrentMouseX;
-                var degreesToRotateX = currentMouseX * rotationScaleInYawRotationDegreesPerInputValue;
-                YawCamera(degreesToRotateX);
-                break;
-            case CameraMovementModes.Pitch:
-                var currentMouseY = inputController.CurrentMouseY;
-                var degreesToPitchY = currentMouseY * rotationScaleInPitchRotationDegreesPerInputValue;
-                PitchCamera(degreesToPitchY);
-                break;
-            default:
-                break;
-
-        }
-    }
-
-    protected CameraMovementModes DetermineWhichCameraMovementModeToHonor()
-    {
-        var returnValue = CameraMovementModes.DoNothing;
-
-        if (inputController.CurrentRightMouseButtonClicked)
-        {
-            // right click mode dominates everything
-            returnValue = CameraMovementModes.BarrelRoll;
-        }
-        else
-        {
-            var isXDisplacementBiggerThanYDisplacement = false;
-
-            var xDisplacement = Mathf.Abs(inputController.CurrentMouseX);
-            var yDisplacement = Mathf.Abs(inputController.CurrentMouseY);
-
-            if (xDisplacement > yDisplacement)
+            if ((hitInfo.collider != null)
+                && (hitInfo.collider.gameObject != null))
             {
-                isXDisplacementBiggerThanYDisplacement = true;
-            }
+                var collidedObjectName = hitInfo.collider.gameObject.name;
 
-            if (isXDisplacementBiggerThanYDisplacement)
-            {
-                returnValue = CameraMovementModes.Yaw;
-            }
-            else
-            {
-                returnValue = CameraMovementModes.Pitch;
+                switch (collidedObjectName.ToLower())
+                {
+                    case "gym bench 001_leather":
+                        hitTreadmill = false;
+                        hitBench1 = false;
+                        hitBench2 = true;
+                        hitBag1 = false;
+                        hitBag2 = false;
+                        break;
+                    case "cylinder":
+                        hitTreadmill = false;
+                        hitBench1 = false;
+                        hitBench2 = false;
+                        hitBag1 = false;
+                        hitBag2 = true;
+                        break;
+                    case "cube.018":
+                        hitTreadmill = false;
+                        hitBench1 = true;
+                        hitBench2 = false;
+                        hitBag1 = false;
+                        hitBag2 = false;
+                        break;
+                    case "belt":
+                        hitTreadmill = true;
+                        hitBench1 = false;
+                        hitBench2 = false;
+                        hitBag1 = false;
+                        hitBag2 = false;
+                        break;
+                    case "cylinder.001":
+                        hitTreadmill = false;
+                        hitBench1 = false;
+                        hitBench2 = false;
+                        hitBag1 = true;
+                        hitBag2 = false;
+                        break;
+                    default:
+                        hitTreadmill = false;
+                        hitBench1 = false;
+                        hitBench2 = false;
+                        hitBag1 = false;
+                        hitBag2 = false;
+                        //var text = log.GetComponent<Text>();
+                        //text.text = collidedObjectName.ToLower();
+                        break;
+                }
+
+                if (hitTreadmill)
+                {
+                    panel.gameObject.SetActive(true);
+                    textTreadmill.gameObject.SetActive(true);
+                    textBench1.gameObject.SetActive(false);
+                    textBench2.gameObject.SetActive(false);
+                    textBag1.gameObject.SetActive(false);
+                    textBag2.gameObject.SetActive(false);
+                }
+                else if (hitBench1)
+                {
+                    panel.gameObject.SetActive(true);
+                    textTreadmill.gameObject.SetActive(false);
+                    textBench1.gameObject.SetActive(true);
+                    textBench2.gameObject.SetActive(false);
+                    textBag1.gameObject.SetActive(false);
+                    textBag2.gameObject.SetActive(false);
+                }
+                else if (hitBench2)
+                {
+                    panel.gameObject.SetActive(true);
+                    textTreadmill.gameObject.SetActive(false);
+                    textBench1.gameObject.SetActive(false);
+                    textBench2.gameObject.SetActive(true);
+                    textBag1.gameObject.SetActive(false);
+                    textBag2.gameObject.SetActive(false);
+                }
+                else if (hitBag1)
+                {
+                    panel.gameObject.SetActive(true);
+                    textTreadmill.gameObject.SetActive(false);
+                    textBench1.gameObject.SetActive(false);
+                    textBench2.gameObject.SetActive(false);
+                    textBag1.gameObject.SetActive(true);
+                    textBag2.gameObject.SetActive(false);
+                }
+                else if (hitBag2)
+                {
+                    panel.gameObject.SetActive(true);
+                    textTreadmill.gameObject.SetActive(false);
+                    textBench1.gameObject.SetActive(false);
+                    textBench2.gameObject.SetActive(false);
+                    textBag1.gameObject.SetActive(false);
+                    textBag2.gameObject.SetActive(true);
+                }
+                else
+                {
+                    panel.gameObject.SetActive(false);
+                }
             }
         }
-
-        return returnValue;
-    }
-
-
-    protected void BarrelRollCamera(float howMuch)
-    {
-        // switch positive to negative
-        howMuch *= -1.0f;
-        transform.Rotate(Vector3.forward, howMuch, Space.Self);
-    }
-
-    protected void PitchCamera(float howMuch)
-    {
-        // switch positive to negative
-        howMuch *= -1.0f;
-        transform.Rotate(Vector3.right, howMuch, Space.Self);
-    }
-
-    protected void YawCamera(float howMuch)
-    {
-        transform.Rotate(Vector3.up, howMuch, Space.Self);
     }
 }
